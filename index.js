@@ -1,39 +1,59 @@
-const { addonBuilder } = require("stremio-addon-sdk");
-const { fetchIntroByEpisode } = require("./lib/source");
+const express = require("express");
+const cors = require("cors");
+const fs = require("fs");
+const path = require("path");
 
-const manifest = {
-  id: "org.stremio.skipintro",
-  version: "1.0.0",
-  name: "Skip Intro",
-  description: "Addon Stremio che usa IntroHater DB per mostrare pulsante Skip Intro",
-  types: ["series"],
-  catalogs: [],
-  resources: ["stream"],
-  idPrefixes: ["tt"]
-};
+const app = express();
+app.use(cors());
 
-const builder = new addonBuilder(manifest);
+// Directory con i file JSON dei timestamp
+const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, "data");
 
-builder.defineStreamHandler(async ({ id }) => {
-  // ID in formato "ttXXXXXXX:season:episode"
-  const [imdbId, seasonStr, episodeStr] = String(id).split(":");
-  const season = Number(seasonStr);
-  const episode = Number(episodeStr);
+// La tua API key IntroHater
+const API_KEY = "153dd04cc7a58e2155df63a89c45725640f81cdc5f3c96e6f15c351fe194ce44";
 
-  const intro = await fetchIntroByEpisode(imdbId, season, episode);
+function isValidRange(start, end) {
+  if (typeof start !== "number" || typeof end !== "number") return false;
+  const dur = end - start;
+  return start >= 0 && end > start && dur >= 5 && dur <= 180;
+}
 
-  const baseStream = {
-    url: `magnet:?xt=urn:btih:SKIPINTRO-${id}`,
-    title: "Skip Intro metadata",
-    behaviorHints: { notHandled: true }
-  };
+function readJson(filePath) {
+  try {
+    const txt = fs.readFileSync(filePath, "utf8");
+    return JSON.parse(txt);
+  } catch (_) {
+    return null;
+  }
+}
 
-  return {
-    streams: [{
-      ...baseStream,
-      introSkip: intro // { startSec, endSec } oppure null
-    }]
-  };
+// Endpoint: /:imdbId/:season/:episode?key=API_KEY
+app.get("/:imdbId/:season/:episode", (req, res) => {
+  const { imdbId, season, episode } = req.params;
+  const { key } = req.query;
+
+  // Controllo chiave
+  if (key !== API_KEY) {
+    return res.status(403).json({ error: "invalid_key" });
+  }
+
+  // File episodio
+  const epFile = path.join(DATA_DIR, imdbId, String(season), `${episode}.json`);
+  const epData = readJson(epFile);
+  if (epData && isValidRange(epData.start, epData.end)) {
+    return res.json({ start: epData.start, end: epData.end, source: "episode" });
+  }
+
+  // Fallback regola di stagione
+  const seasonFile = path.join(DATA_DIR, imdbId, "season.json");
+  const seasonData = readJson(seasonFile);
+  const rule = seasonData?.[String(season)];
+  if (rule && isValidRange(rule.start, rule.end)) {
+    return res.json({ start: rule.start, end: rule.end, source: "season" });
+  }
+
+  return res.status(404).json({ error: "not_found" });
 });
 
-module.exports = builder.getInterface();
+const port = process.env.PORT || 8080;
+app.listen(port, () => console.log(`Skip Intro API running on port ${port}`));
