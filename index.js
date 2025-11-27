@@ -5,7 +5,7 @@ const manifest = {
   id: "org.stremio.skipintro",
   version: "1.0.0",
   name: "Skip Intro",
-  description: "Mostra il pulsante Skip Intro, basandosi sul catalogo imdb",
+  description: "Addon Stremio che usa IntroHater DB per mostrare pulsante Skip Intro",
   types: ["series"],
   catalogs: [],
   resources: ["stream"],
@@ -14,28 +14,26 @@ const manifest = {
 
 const builder = new addonBuilder(manifest);
 
-// Questo addon funge da “enhancer”: non fornisce lo stream,
-// ma allega metadata introduttivi (introSkip) che la UI può usare.
 builder.defineStreamHandler(async ({ id }) => {
+  // ID in formato "ttXXXXXXX:season:episode"
   const [imdbId, seasonStr, episodeStr] = String(id).split(":");
   const season = Number(seasonStr);
   const episode = Number(episodeStr);
 
   const intro = await fetchIntroByEpisode(imdbId, season, episode);
 
-  // Dummy stream per garantire l’iniezione di metadata (Stremio mostrerà altri stream reali in lista).
   const baseStream = {
-    url: `magnet:?xt=urn:btih:SKIPINTRO-${imdbId}-${season}-${episode}`,
+    url: `magnet:?xt=urn:btih:SKIPINTRO-${id}`,
     title: "Skip Intro metadata",
     behaviorHints: { notHandled: true }
   };
 
-  return Promise.resolve({
+  return {
     streams: [{
       ...baseStream,
-      introSkip: intro // { startSec, endSec, source } oppure null
+      introSkip: intro // { startSec, endSec } oppure null
     }]
-  });
+  };
 });
 
 module.exports = builder.getInterface();
