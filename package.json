@@ -1,7 +1,7 @@
 {
   "name": "stremio-skip-intro",
-  "version": "1.1.0",
-  "description": "Addon Stremio: mostra pulsante Skip Intro usando database online (IMDB IDs).",
+  "version": "1.0.0",
+  "description": "Addon Stremio che mostra pulsante Skip Intro usando IntroHater DB",
   "main": "index.js",
   "type": "commonjs",
   "scripts": {
