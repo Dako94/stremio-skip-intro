@@ -1,14 +1,13 @@
 {
-  "name": "stremio-skip-intro",
+  "name": "skip-intro-api",
   "version": "1.0.0",
-  "description": "Addon Stremio che mostra pulsante Skip Intro usando IntroHater DB",
-  "main": "index.js",
+  "main": "server.js",
   "type": "commonjs",
   "scripts": {
-    "start": "node index.js"
+    "start": "node server.js"
   },
   "dependencies": {
-    "node-fetch": "^2.6.7",
-    "stremio-addon-sdk": "^1.15.0"
+    "express": "^4.19.2",
+    "cors": "^2.8.5"
   }
 }
