@@ -1,0 +1,14 @@
+{
+  "name": "stremio-skip-intro",
+  "version": "1.0.0",
+  "description": "Stremio addon che allega introSkip (start/end) per mostrare il pulsante Skip Intro",
+  "main": "index.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "node-fetch": "^2.6.7",
+    "stremio-addon-sdk": "^1.15.0"
+  }
+}
